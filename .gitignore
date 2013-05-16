@@ -4,3 +4,12 @@
 *.jar
 *.war
 *.ear
+
+#maven
+target/
+
+# IntilliJ
+*.iml
+*.ipr
+*.iws
+.idea/
