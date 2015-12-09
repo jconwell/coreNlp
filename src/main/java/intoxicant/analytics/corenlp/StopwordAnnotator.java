@@ -1,4 +1,4 @@
-package intoxicant.analytics.coreNlp;
+package intoxicant.analytics.corenlp;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,7 +51,14 @@ public class StopwordAnnotator implements Annotator, CoreAnnotation<Pair<Boolean
     private CharArraySet stopwords;
     private boolean checkLemma;
 
-    public StopwordAnnotator(String annotatorClass, Properties props) {
+    public StopwordAnnotator() {
+	this(new Properties());
+    }
+
+    public StopwordAnnotator(String notUsed, Properties props) {
+	this(props);
+    }
+    public StopwordAnnotator(Properties props) {
         this.props = props;
 
         this.checkLemma = Boolean.parseBoolean(props.getProperty(CHECK_LEMMA, "false"));
