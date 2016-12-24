@@ -1,4 +1,4 @@
-package intoxicant.analytics.coreNlp;
+package intoxicant.analytics.corenlp;
 
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -41,7 +41,7 @@ public class StopwordAnnotatorTest {
     @Before
     public void before() {
         props.put("annotators", "tokenize, ssplit, stopword");
-        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.coreNlp.StopwordAnnotator");
+        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.corenlp.StopwordAnnotator");
     }
 
     @org.junit.Test
@@ -63,7 +63,7 @@ public class StopwordAnnotatorTest {
         //Test that is lemmatization is being checked, requirements returns tokenize, ssplit, pos, and lemms
         props = new Properties();
         props.put("annotators", "tokenize, ssplit, pos, lemma, stopword");
-        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.coreNlp.StopwordAnnotator");
+        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.corenlp.StopwordAnnotator");
         props.setProperty(StopwordAnnotator.CHECK_LEMMA, "true");
         sw = new StopwordAnnotator(StopwordAnnotator.ANNOTATOR_CLASS, props);
         assertTrue(sw.requires().size() == 4);
@@ -93,7 +93,7 @@ public class StopwordAnnotatorTest {
     public void testLuceneStopwordList() throws Exception {
         Properties props = new Properties();
         props.put("annotators", "tokenize, ssplit, stopword");
-        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.coreNlp.StopwordAnnotator");
+        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.corenlp.StopwordAnnotator");
 
         StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
         Annotation document = new Annotation(example);
@@ -131,7 +131,7 @@ public class StopwordAnnotatorTest {
         //setup coreNlp properties for stopwords. Note the custom stopword list property
         Properties props = new Properties();
         props.put("annotators", "tokenize, ssplit, stopword");
-        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.coreNlp.StopwordAnnotator");
+        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.corenlp.StopwordAnnotator");
         props.setProperty(StopwordAnnotator.STOPWORDS_LIST, customStopWordList);
 
         //get the custom stopword set
@@ -171,7 +171,7 @@ public class StopwordAnnotatorTest {
         //setup coreNlp properties for stopwords. Note the custom stopword list and check for lemma property
         Properties props = new Properties();
         props.put("annotators", "tokenize, ssplit, pos, lemma, stopword");
-        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.coreNlp.StopwordAnnotator");
+        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.corenlp.StopwordAnnotator");
         props.setProperty(StopwordAnnotator.STOPWORDS_LIST, customStopWordList);
         props.setProperty(StopwordAnnotator.CHECK_LEMMA, "true");
 

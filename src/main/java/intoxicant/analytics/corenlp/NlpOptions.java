@@ -1,4 +1,4 @@
-package intoxicant.analytics.coreNlp;
+package intoxicant.analytics.corenlp;
 
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
