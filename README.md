@@ -6,7 +6,7 @@ This library is a growing set of extensions for and tools to work with [CoreNlp]
 Identifying Stopwords in CoreNlp
 --------------------------------
 
-CoreNlp doesnt have stopword identification built in, so I wrote an extension to its analytics pipeline (called Annatators) to check if a token's word and lemma value are stopwords.
+CoreNlp doesnt have stopword identification built in, so I wrote an extension to its analytics pipeline (called Annotators) to check if a token's word and lemma value are stopwords.
 
 By default, the StopwordAnnotator uses the built in Lucene stopword list, but you have to option to pass in a custom list of stopwords for it to use instead.  You can also specify if the StopwordAnnotator should check the lemma of the token against the stopword list or not.
 
