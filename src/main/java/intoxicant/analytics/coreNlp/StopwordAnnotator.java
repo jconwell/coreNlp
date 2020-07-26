@@ -1,20 +1,17 @@
 package intoxicant.analytics.coreNlp;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-
 import edu.stanford.nlp.ling.CoreAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
+import edu.stanford.nlp.util.Pair;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.util.Version;
 
-import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
-import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.util.Pair;
+import java.util.*;
 
 /**
  * User: jconwell
@@ -26,9 +23,6 @@ public class StopwordAnnotator implements Annotator, CoreAnnotation<Pair<Boolean
      * stopword annotator class name used in annotators property
      */
     public static final String ANNOTATOR_CLASS = "stopword";
-
-    public static final String STANFORD_STOPWORD = ANNOTATOR_CLASS;
-    public static final Requirement STOPWORD_REQUIREMENT = new Requirement(STANFORD_STOPWORD);
 
     /**
      * Property key to specify the comma delimited list of custom stopwords
@@ -79,18 +73,20 @@ public class StopwordAnnotator implements Annotator, CoreAnnotation<Pair<Boolean
     }
 
     @Override
-    public Set<Requirement> requirementsSatisfied() {
-        return Collections.singleton(STOPWORD_REQUIREMENT);
+    public Set<Class<? extends CoreAnnotation>> requirementsSatisfied() {
+        return Collections.singleton(StopwordAnnotator.class);
     }
 
     @Override
-    public Set<Requirement> requires() {
+    public Set<Class<? extends CoreAnnotation>> requires() {
+        Set<Class<? extends CoreAnnotation>> requeredAnnotations = new HashSet<>();
+        requeredAnnotations.add(CoreAnnotations.TextAnnotation.class);
+        requeredAnnotations.add(CoreAnnotations.TokensAnnotation.class);
         if (checkLemma) {
-            return TOKENIZE_SSPLIT_POS_LEMMA;
+            requeredAnnotations.add(CoreAnnotations.LemmaAnnotation.class);
+            requeredAnnotations.add(CoreAnnotations.PartOfSpeechAnnotation.class);
         }
-        else {
-            return TOKENIZE_AND_SSPLIT;
-        }
+        return requeredAnnotations;
     }
 
     @Override
