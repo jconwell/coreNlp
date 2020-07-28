@@ -8,17 +8,22 @@
     <artifactId>coreNlpExtensions</artifactId>
     <version>1.0</version>
 
+    <properties>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+    </properties>
+
     <dependencies>
 
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
-            <version>1.3.5</version>
+            <version>3.9.2</version>
         </dependency>
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
-            <version>1.3.5</version>
+            <version>3.9.2</version>
             <classifier>models</classifier>
         </dependency>
 
@@ -31,7 +36,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.8.2</version>
+            <version>4.13</version>
             <scope>test</scope>
         </dependency>
 

@@ -8,6 +8,7 @@ import edu.stanford.nlp.util.Pair;
 import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.util.Version;
 import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.Properties;
@@ -36,47 +37,46 @@ public class StopwordAnnotatorTest {
     //adding a couple extra terms to standard lucene list to test against
     private static final String customStopWordList = "start,starts,period,periods,a,an,and,are,as,at,be,but,by,for,if,in,into,is,it,no,not,of,on,or,such,that,the,their,then,there,these,they,this,to,was,will,with";
 
-    Properties props = new Properties();
+    Properties props;
 
     @Before
     public void before() {
-        props.put("annotators", "tokenize, ssplit, stopword");
+        props = new Properties();
         props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.coreNlp.StopwordAnnotator");
     }
 
-    @org.junit.Test
-    public void testRequirementsSatisfied() throws Exception {
+    @Test
+    public void testRequirementsSatisfied() {
+        props.setProperty("annotators", "tokenize, ssplit, stopword");
         StopwordAnnotator sw = new StopwordAnnotator(StopwordAnnotator.ANNOTATOR_CLASS , props);
-        assertTrue(sw.requirementsSatisfied().size() == 1);
-        assertTrue(sw.requirementsSatisfied().contains(StopwordAnnotator.STOPWORD_REQUIREMENT));
+        assertEquals(1, sw.requirementsSatisfied().size());
+        assertTrue(sw.requirementsSatisfied().contains(StopwordAnnotator.class));
     }
 
-    @org.junit.Test
-    public void testRequires() throws Exception {
+    @Test
+    public void testRequires() {
 
         //Test that if lemmatization is not being checked, requirements only returns tokenize and ssplit
         StopwordAnnotator sw = new StopwordAnnotator(StopwordAnnotator.ANNOTATOR_CLASS, props);
-        assertTrue(sw.requires().size() == 2);
-        assertTrue(sw.requires().contains(StopwordAnnotator.TOKENIZE_REQUIREMENT));
-        assertTrue(sw.requires().contains(StopwordAnnotator.SSPLIT_REQUIREMENT));
+        assertEquals(2, sw.requires().size());
+        assertTrue(sw.requires().contains(CoreAnnotations.TokensAnnotation.class));
+        assertTrue(sw.requires().contains(CoreAnnotations.TextAnnotation.class));
 
-        //Test that is lemmatization is being checked, requirements returns tokenize, ssplit, pos, and lemms
-        props = new Properties();
-        props.put("annotators", "tokenize, ssplit, pos, lemma, stopword");
-        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.coreNlp.StopwordAnnotator");
+        //Test that is lemmatization is being checked, requirements returns tokenize, ssplit, pos, and lemmas
+        props.setProperty("annotators", "tokenize, ssplit, pos, lemma, stopword");
         props.setProperty(StopwordAnnotator.CHECK_LEMMA, "true");
         sw = new StopwordAnnotator(StopwordAnnotator.ANNOTATOR_CLASS, props);
-        assertTrue(sw.requires().size() == 4);
-        assertTrue(sw.requires().contains(StopwordAnnotator.TOKENIZE_REQUIREMENT));
-        assertTrue(sw.requires().contains(StopwordAnnotator.SSPLIT_REQUIREMENT));
-        assertTrue(sw.requires().contains(StopwordAnnotator.POS_REQUIREMENT));
-        assertTrue(sw.requires().contains(StopwordAnnotator.LEMMA_REQUIREMENT));
+        assertEquals(4, sw.requires().size());
+        assertTrue(sw.requires().contains(CoreAnnotations.TokensAnnotation.class));
+        assertTrue(sw.requires().contains(CoreAnnotations.TextAnnotation.class));
+        assertTrue(sw.requires().contains(CoreAnnotations.PartOfSpeechAnnotation.class));
+        assertTrue(sw.requires().contains(CoreAnnotations.LemmaAnnotation.class));
     }
 
-    @org.junit.Test
-    public void testGetType() throws Exception {
+    @Test
+    public void testGetType() {
         StopwordAnnotator sw = new StopwordAnnotator(StopwordAnnotator.ANNOTATOR_CLASS, props);
-        assertTrue(sw.getType().equals(Pair.makePair(true, true).getClass()));
+        assertEquals(sw.getType(), Pair.makePair(true, true).getClass());
     }
 
 
@@ -87,15 +87,12 @@ public class StopwordAnnotatorTest {
 
     /**
      * Test to validate that stopwords are properly annotated in the token list
-     * @throws Exception
      */
-    @org.junit.Test
-    public void testLuceneStopwordList() throws Exception {
-        Properties props = new Properties();
-        props.put("annotators", "tokenize, ssplit, stopword");
-        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.coreNlp.StopwordAnnotator");
+    @Test
+    public void testLuceneStopwordList() {
+        props.setProperty("annotators", "tokenize, ssplit, stopword");
 
-        StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(props, false);
         Annotation document = new Annotation(example);
         pipeline.annotate(document);
         List<CoreLabel> tokens = document.get(CoreAnnotations.TokensAnnotation.class);
@@ -108,7 +105,7 @@ public class StopwordAnnotatorTest {
             //get the stopword annotation
             Pair<Boolean, Boolean> stopword = token.get(StopwordAnnotator.class);
 
-            String word = token.word().toLowerCase();
+            String word = token.word();
             if (stopWords.contains(word)) {
                 assertTrue(stopword.first());
             }
@@ -119,25 +116,24 @@ public class StopwordAnnotatorTest {
             //not checking lemma, so always false
             assertFalse(stopword.second());
         }
+        StanfordCoreNLP.clearAnnotatorPool();
     }
 
     /**
      * Test to validate that the custom stopword list words
-     * @throws Exception
      */
-    @org.junit.Test
-    public void testCustomStopwordList() throws Exception {
+    @Test
+    public void testCustomStopwordList() {
 
         //setup coreNlp properties for stopwords. Note the custom stopword list property
-        Properties props = new Properties();
-        props.put("annotators", "tokenize, ssplit, stopword");
-        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.coreNlp.StopwordAnnotator");
+        props.setProperty("annotators", "tokenize, ssplit, stopword");
         props.setProperty(StopwordAnnotator.STOPWORDS_LIST, customStopWordList);
+        props.setProperty(StopwordAnnotator.IGNORE_STOPWORD_CASE, String.valueOf(true));
 
         //get the custom stopword set
         Set<?> stopWords = StopwordAnnotator.getStopWordList(Version.LUCENE_36, customStopWordList, true);
 
-        StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(props, false);
         Annotation document = new Annotation(example);
         pipeline.annotate(document);
         List<CoreLabel> tokens = document.get(CoreAnnotations.TokensAnnotation.class);
@@ -157,28 +153,27 @@ public class StopwordAnnotatorTest {
             //not checking lemma, so always false
             assertFalse(stopword.second());
         }
+        StanfordCoreNLP.clearAnnotatorPool();
     }
 
     /**
      * Test to validate that lemma values are checked against the (custom) stopword list
      *
      * NOTE: since we're loading the pos model into memory you'll need to set the VM memory size via '-Xms512m -Xmx1048m'
-     * @throws Exception
      */
-    @org.junit.Test
-    public void testStopwordsWithLemma() throws Exception {
+    @Test
+    public void testStopwordsWithLemma() {
 
         //setup coreNlp properties for stopwords. Note the custom stopword list and check for lemma property
-        Properties props = new Properties();
-        props.put("annotators", "tokenize, ssplit, pos, lemma, stopword");
-        props.setProperty("customAnnotatorClass.stopword", "intoxicant.analytics.coreNlp.StopwordAnnotator");
+        props.setProperty("annotators", "tokenize, ssplit, pos, lemma, stopword");
         props.setProperty(StopwordAnnotator.STOPWORDS_LIST, customStopWordList);
         props.setProperty(StopwordAnnotator.CHECK_LEMMA, "true");
+        props.setProperty(StopwordAnnotator.IGNORE_STOPWORD_CASE, String.valueOf(true));
 
         //get the custom stopword set
         Set<?> stopWords = StopwordAnnotator.getStopWordList(Version.LUCENE_36, customStopWordList, true);
 
-        StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(props, false);
         Annotation document = new Annotation(example);
         pipeline.annotate(document);
         List<CoreLabel> tokens = document.get(CoreAnnotations.TokensAnnotation.class);
@@ -203,5 +198,136 @@ public class StopwordAnnotatorTest {
                 assertFalse(stopword.first());
             }
         }
+        StanfordCoreNLP.clearAnnotatorPool();
+    }
+
+    /**
+     * Test to validate if the IGNORE_STOPWORD_CASE property works correctly and as intended.
+     * If all the words in the stopword list is lower case and the example sentence is upper case and
+     * IGNORE_STOPWORD_CASE is false, than none of the words in example should be annotated as stopwords.
+     *
+     * NOTE: since we're loading the pos model into memory you'll need to set the VM memory size via '-Xms512m -Xmx1048m'
+     */
+    @Test
+    public void testStopwordsWithIgnoreCaseFalse() {
+
+        final boolean STOPWORD_CASE_ISIGNORED = false;
+
+        //setup coreNlp properties for stopwords. Note the custom stopword list and check for lemma property
+        props.setProperty("annotators", "tokenize, ssplit, pos, lemma, stopword");
+        props.setProperty(StopwordAnnotator.STOPWORDS_LIST, customStopWordList.toLowerCase());
+        props.setProperty(StopwordAnnotator.IGNORE_STOPWORD_CASE, String.valueOf(STOPWORD_CASE_ISIGNORED));
+        props.setProperty(StopwordAnnotator.CHECK_LEMMA, "true");
+
+        //get the custom stopword set
+        Set<?> stopWords = StopwordAnnotator.getStopWordList(Version.LUCENE_36, customStopWordList.toLowerCase(), STOPWORD_CASE_ISIGNORED);
+
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(props, false);
+        Annotation document = new Annotation(example.toUpperCase());
+        pipeline.annotate(document);
+        List<CoreLabel> tokens = document.get(CoreAnnotations.TokensAnnotation.class);
+        for (CoreLabel token : tokens) {
+            //get the stopword annotation
+            Pair<Boolean, Boolean> stopword = token.get(StopwordAnnotator.class);
+            assertFalse(stopword.first());
+        }
+        StanfordCoreNLP.clearAnnotatorPool();
+    }
+
+    /**
+     * Test to validate if the IGNORE_STOPWORD_CASE property works correctly and as intended.
+     * If all the words in the stopword list is lower case and the example sentence is upper case and
+     * IGNORE_STOPWORD_CASE is true, than stopwords should be properly annotated despite it's casing.
+     * Custom stopword list is used.
+     *
+     * NOTE: since we're loading the pos model into memory you'll need to set the VM memory size via '-Xms512m -Xmx1048m'
+     */
+    @Test
+    public void testCustomStopwordsWithIgnoreCaseTrue() {
+
+        final boolean STOPWORD_CASE_ISIGNORED = true;
+
+        //setup coreNlp properties for stopwords. Note the custom stopword list and check for lemma property
+        props.setProperty("annotators", "tokenize, ssplit, pos, lemma, stopword");
+        props.setProperty(StopwordAnnotator.STOPWORDS_LIST, customStopWordList.toLowerCase());
+        props.setProperty(StopwordAnnotator.IGNORE_STOPWORD_CASE, String.valueOf(STOPWORD_CASE_ISIGNORED));
+        props.setProperty(StopwordAnnotator.CHECK_LEMMA, "true");
+
+        //get the custom stopword set
+        Set<?> stopWords = StopwordAnnotator.getStopWordList(Version.LUCENE_36, customStopWordList.toLowerCase(), STOPWORD_CASE_ISIGNORED);
+
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(props, false);
+        Annotation document = new Annotation(example.toUpperCase());
+        pipeline.annotate(document);
+        List<CoreLabel> tokens = document.get(CoreAnnotations.TokensAnnotation.class);
+        for (CoreLabel token : tokens) {
+            //get the stopword annotation
+            Pair<Boolean, Boolean> stopword = token.get(StopwordAnnotator.class);
+
+            String word = token.word().toLowerCase();
+            if (stopWords.contains(word)) {
+                assertTrue(stopword.first());
+            }
+            else {
+                assertFalse(stopword.first());
+            }
+
+            String lemma = token.lemma().toLowerCase();
+            if (stopWords.contains(lemma)) {
+                assertTrue(stopword.first());
+            }
+            else {
+                assertFalse(stopword.first());
+            }
+        }
+        StanfordCoreNLP.clearAnnotatorPool();
+    }
+
+    /**
+     * Test to validate if the IGNORE_STOPWORD_CASE property works correctly and as intended.
+     * If all the words in the stopword list is lower case and the example sentence is upper case and
+     * IGNORE_STOPWORD_CASE is true, than stopwords should be properly annotated despite it's casing.
+     * Default stopword list is used.
+     *
+     * NOTE: since we're loading the pos model into memory you'll need to set the VM memory size via '-Xms512m -Xmx1048m'
+     */
+    @Test
+    public void testDefaultStopwordsWithIgnoreCaseTrue() {
+
+        final boolean STOPWORD_CASE_ISIGNORED = true;
+
+        //setup coreNlp properties for stopwords. Note the custom stopword list and check for lemma property
+        props.setProperty("annotators", "tokenize, ssplit, pos, lemma, stopword");
+        props.setProperty(StopwordAnnotator.IGNORE_STOPWORD_CASE, String.valueOf(STOPWORD_CASE_ISIGNORED));
+        props.setProperty(StopwordAnnotator.CHECK_LEMMA, "true");
+
+        //get the custom stopword set
+        Set<?> stopWords = StopAnalyzer.ENGLISH_STOP_WORDS_SET;
+
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(props, false);
+        Annotation document = new Annotation(example.toUpperCase());
+        pipeline.annotate(document);
+        List<CoreLabel> tokens = document.get(CoreAnnotations.TokensAnnotation.class);
+        for (CoreLabel token : tokens) {
+            //get the stopword annotation
+            Pair<Boolean, Boolean> stopword = token.get(StopwordAnnotator.class);
+
+            String word = token.word().toLowerCase();
+            if (stopWords.contains(word)) {
+                assertTrue(stopword.first());
+            }
+            else {
+                assertFalse(stopword.first());
+            }
+
+            String lemma = token.lemma().toLowerCase();
+            if (stopWords.contains(lemma)) {
+                assertTrue(stopword.first());
+            }
+            else {
+                assertFalse(stopword.first());
+            }
+        }
+        StanfordCoreNLP.clearAnnotatorPool();
     }
 }

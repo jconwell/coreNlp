@@ -1,20 +1,17 @@
 package intoxicant.analytics.coreNlp;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-
 import edu.stanford.nlp.ling.CoreAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
+import edu.stanford.nlp.util.Pair;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.util.Version;
 
-import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
-import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.util.Pair;
+import java.util.*;
 
 /**
  * User: jconwell
@@ -26,9 +23,6 @@ public class StopwordAnnotator implements Annotator, CoreAnnotation<Pair<Boolean
      * stopword annotator class name used in annotators property
      */
     public static final String ANNOTATOR_CLASS = "stopword";
-
-    public static final String STANFORD_STOPWORD = ANNOTATOR_CLASS;
-    public static final Requirement STOPWORD_REQUIREMENT = new Requirement(STANFORD_STOPWORD);
 
     /**
      * Property key to specify the comma delimited list of custom stopwords
@@ -55,13 +49,13 @@ public class StopwordAnnotator implements Annotator, CoreAnnotation<Pair<Boolean
         this.props = props;
 
         this.checkLemma = Boolean.parseBoolean(props.getProperty(CHECK_LEMMA, "false"));
+        boolean ignoreCase = Boolean.parseBoolean(props.getProperty(IGNORE_STOPWORD_CASE, "false"));
 
         if (this.props.containsKey(STOPWORDS_LIST)) {
             String stopwordList = props.getProperty(STOPWORDS_LIST);
-            boolean ignoreCase = Boolean.parseBoolean(props.getProperty(IGNORE_STOPWORD_CASE, "false"));
             this.stopwords = getStopWordList(Version.LUCENE_36, stopwordList, ignoreCase);
         } else {
-            this.stopwords = (CharArraySet) StopAnalyzer.ENGLISH_STOP_WORDS_SET;
+            this.stopwords = new CharArraySet(Version.LUCENE_36, StopAnalyzer.ENGLISH_STOP_WORDS_SET, ignoreCase);
         }
     }
 
@@ -70,8 +64,8 @@ public class StopwordAnnotator implements Annotator, CoreAnnotation<Pair<Boolean
         if (stopwords != null && stopwords.size() > 0 && annotation.containsKey(TokensAnnotation.class)) {
             List<CoreLabel> tokens = annotation.get(TokensAnnotation.class);
             for (CoreLabel token : tokens) {
-                boolean isWordStopword = stopwords.contains(token.word().toLowerCase());
-                boolean isLemmaStopword = checkLemma ? stopwords.contains(token.word().toLowerCase()) : false;
+                boolean isWordStopword = stopwords.contains(token.word());
+                boolean isLemmaStopword = checkLemma && stopwords.contains(token.word());
                 Pair<Boolean, Boolean> pair = Pair.makePair(isWordStopword, isLemmaStopword);
                 token.set(StopwordAnnotator.class, pair);
             }
@@ -79,18 +73,20 @@ public class StopwordAnnotator implements Annotator, CoreAnnotation<Pair<Boolean
     }
 
     @Override
-    public Set<Requirement> requirementsSatisfied() {
-        return Collections.singleton(STOPWORD_REQUIREMENT);
+    public Set<Class<? extends CoreAnnotation>> requirementsSatisfied() {
+        return Collections.singleton(StopwordAnnotator.class);
     }
 
     @Override
-    public Set<Requirement> requires() {
+    public Set<Class<? extends CoreAnnotation>> requires() {
+        Set<Class<? extends CoreAnnotation>> requeredAnnotations = new HashSet<>();
+        requeredAnnotations.add(CoreAnnotations.TextAnnotation.class);
+        requeredAnnotations.add(CoreAnnotations.TokensAnnotation.class);
         if (checkLemma) {
-            return TOKENIZE_SSPLIT_POS_LEMMA;
+            requeredAnnotations.add(CoreAnnotations.LemmaAnnotation.class);
+            requeredAnnotations.add(CoreAnnotations.PartOfSpeechAnnotation.class);
         }
-        else {
-            return TOKENIZE_AND_SSPLIT;
-        }
+        return requeredAnnotations;
     }
 
     @Override
@@ -102,9 +98,7 @@ public class StopwordAnnotator implements Annotator, CoreAnnotation<Pair<Boolean
     public static CharArraySet getStopWordList(Version luceneVersion, String stopwordList, boolean ignoreCase) {
         String[] terms = stopwordList.split(",");
         CharArraySet stopwordSet = new CharArraySet(luceneVersion, terms.length, ignoreCase);
-        for (String term : terms) {
-            stopwordSet.add(term);
-        }
+        Collections.addAll(stopwordSet, terms);
         return CharArraySet.unmodifiableSet(stopwordSet);
     }
 }
